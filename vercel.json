@@ -3,8 +3,6 @@
   "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps",
   "functions": {
-    "app/**/*.{js,ts,tsx}": {
-      "maxDuration": 30
-    }
+    "app/**/*.{js,ts,tsx}": { "maxDuration": 30 }
   }
 }
