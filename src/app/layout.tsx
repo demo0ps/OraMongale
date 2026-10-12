@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { bootstrap } from "@/db/bootstrap";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export const metadata: Metadata = {
   title: {
     default: "ORAMONGALE — Verified haulage for South African mines",

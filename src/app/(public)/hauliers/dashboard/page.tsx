@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { eq, asc } from "drizzle-orm";
 import { getCompanySession, getCompanyForSession } from "@/company-auth";

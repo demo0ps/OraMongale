@@ -53,3 +53,4 @@ logs/
 # Vercel CLI local state
 .vercel/
 .local/
+.env*
