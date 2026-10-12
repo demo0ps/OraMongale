@@ -1,16 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
+import { useFormState as useActionState } from "react-dom";
+import { useTransition } from "react";
 import { addTruckWithDocs } from "./actions";
 import { TRUCK_TYPES, TRUCK_DOC_TYPES } from "@/lib/constants";
 
 const initialState: { error?: string; ok?: boolean } = {};
 
 export default function AddTruckAndDocsForm() {
-  const [state, dispatch, pending] = useActionState(addTruckWithDocs, initialState);
+  const [state, dispatch] = useActionState(addTruckWithDocs, initialState);
+  const [pending, startTransition] = useTransition();
 
   return (
-    <form action={dispatch} className="space-y-5">
+    <form action={(fd) => startTransition(() => dispatch(fd))} className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <label className="label">Truck type</label>

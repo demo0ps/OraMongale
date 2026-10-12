@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useFormState as useActionState } from "react-dom";
+import { useTransition } from "react";
 import { useState } from "react";
 import { loginAdmin } from "./actions";
 
@@ -16,7 +17,8 @@ export default function AdminLoginForm({
   demoEmail: string;
   demoPassword: string;
 }) {
-  const [state, dispatch, pending] = useActionState(loginAdmin, initial);
+  const [state, dispatch] = useActionState(loginAdmin, initial);
+  const [pending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -26,7 +28,7 @@ export default function AdminLoginForm({
   }
 
   return (
-    <form action={dispatch} className="space-y-4">
+    <form action={(fd) => startTransition(() => dispatch(fd))} className="space-y-4">
       <input type="hidden" name="csrfToken" value={csrfToken} />
       {state?.error && (
         <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">

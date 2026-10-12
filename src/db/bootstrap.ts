@@ -2,6 +2,7 @@ import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "./index";
 import { provinces, users, auditEvents } from "./schema";
+import { isDemoSeeded, seedDemoData } from "@/lib/demo-seed";
 
 const SA_PROVINCES: { code: string; name: string }[] = [
   { code: "EC", name: "Eastern Cape" },
@@ -336,6 +337,23 @@ export async function bootstrap(): Promise<void> {
     console.log(
       `[bootstrap] Admin account ready: ${email} (change password on first login)`
     );
+  }
+
+  // ---------- Auto-seed demo data on empty DB ----------
+  // On Vercel serverless the DB lives in /tmp and resets between cold starts
+  // (ephemeral), so demo data is reseeded automatically. Controlled via
+  // SEED_DEMO env var (default: true).
+  const seedFlag = process.env.SEED_DEMO ?? "true";
+  if (seedFlag === "true" || seedFlag === "1") {
+    try {
+      if (!(await isDemoSeeded())) {
+        console.log("[bootstrap] Seeding demo data...");
+        await seedDemoData();
+        console.log("[bootstrap] Demo data seeded.");
+      }
+    } catch (e) {
+      console.error("[bootstrap] Demo seed failed:", e);
+    }
   }
 }
 

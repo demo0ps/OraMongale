@@ -1,17 +1,18 @@
 "use client";
 
 import { useTransition } from "react";
-import { useActionState } from "react";
+import { useFormState as useActionState } from "react-dom";
 import { uploadCompanyDoc } from "./actions";
 import { COMPANY_DOC_TYPES } from "@/lib/constants";
 
 const initialState: { error?: string; ok?: boolean } = {};
 
 export default function UploadCompanyDocForm() {
-  const [state, dispatch, pending] = useActionState(uploadCompanyDoc, initialState);
+  const [state, dispatch] = useActionState(uploadCompanyDoc, initialState);
+  const [pending, startTransition] = useTransition();
   return (
     <form
-      action={dispatch}
+      action={(fd) => startTransition(() => dispatch(fd))}
       className="grid gap-3 sm:grid-cols-3"
     >
       <div className="sm:col-span-1">

@@ -30,14 +30,20 @@ export async function POST(req: Request) {
   }
 
   const buf = Buffer.from(await file.arrayBuffer());
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "pods");
+  // Vercel serverless fs is read-only under /var/task; use /tmp.
+  const isVercel = !!process.env.VERCEL;
+  const uploadDir = isVercel
+    ? "/tmp/pods"
+    : path.join(process.cwd(), "public", "uploads", "pods");
   fs.mkdirSync(uploadDir, { recursive: true });
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
   const safeExt = ["jpg", "jpeg", "png", "webp", "pdf"].includes(ext) ? ext : "jpg";
   const fname = `${Date.now()}-${randomBytes(6).toString("hex")}.${safeExt}`;
   const fullPath = path.join(uploadDir, fname);
   fs.writeFileSync(fullPath, buf);
-  const fileUrl = `/uploads/pods/${fname}`;
+  // POD images won't be served from /tmp on Vercel; fileUrl is for local dev.
+  // In production the DB record stores fullPath; the admin POD viewer will fall back.
+  const fileUrl = isVercel ? null : `/uploads/pods/${fname}`;
 
   // Insert trip update
   const ins = await db
@@ -59,7 +65,7 @@ export async function POST(req: Request) {
     jobId,
     driverId: s.driverId,
     kind: kind as any,
-    filePath: fileUrl,
+    filePath: fileUrl as any,
     fileName: file.name,
     fileSize: buf.length,
     tons,

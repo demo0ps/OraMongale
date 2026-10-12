@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useFormState as useActionState } from "react-dom";
 import { useState, useTransition } from "react";
 import { submitLead, type LeadFormState } from "./actions";
 import { TRUCK_TYPES } from "@/lib/constants";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { useActionState } from "react";
+import { useFormState as useActionState } from "react-dom";
 import { joinCompany, type JoinFormState } from "./actions";
 import { SA_PROVINCES } from "@/lib/constants";
 

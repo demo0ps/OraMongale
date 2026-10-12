@@ -6,8 +6,10 @@ import fs from "node:fs";
 // without real auth, no further gating — remove or password-lock before
 // deploying publicly.
 export async function GET() {
+  const isVercel = !!process.env.VERCEL;
+  const defaultDbPath = isVercel ? "/tmp/oramongale.db" : "data/oramongale.db";
   const dbPath =
-    process.env.DATABASE_URL?.replace(/^file:/, "") ?? "data/oramongale.db";
+    process.env.DATABASE_URL?.replace(/^file:/, "") ?? defaultDbPath;
   const abs = path.isAbsolute(dbPath)
     ? dbPath
     : path.join(process.cwd(), dbPath);
