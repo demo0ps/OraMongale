@@ -54,4 +54,5 @@ logs/
 .vercel/
 .local/
 .env*
-src/lib/pdf-data/
+
+# pdfkit fonts are shipped in src/lib/pdf-fonts/

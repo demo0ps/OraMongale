@@ -5,6 +5,65 @@ import fs from "node:fs";
 import { formatMoney } from "./invoice-settings";
 import type { InvoiceSettings } from "./invoice-settings";
 
+// ---------- Ensure pdfkit can find its bundled AFM font metrics ----------
+// When Next.js bundles pdfkit into a server chunk, __dirname inside pdfkit
+// points at .next/server/chunks but the .afm files aren't copied there. We
+// ship the standard 14 AFM files in src/lib/pdf-fonts and write them into the
+// directory pdfkit will read from before instantiating any PDFDocument.
+const STANDARD_AFM = [
+  "Courier.afm","Courier-Bold.afm","Courier-Oblique.afm","Courier-BoldOblique.afm",
+  "Helvetica.afm","Helvetica-Bold.afm","Helvetica-Oblique.afm","Helvetica-BoldOblique.afm",
+  "Times-Roman.afm","Times-Bold.afm","Times-Italic.afm","Times-BoldItalic.afm",
+  "Symbol.afm","ZapfDingbats.afm",
+] as const;
+
+let _fontsInstalled = false;
+function ensurePdfFonts() {
+  if (_fontsInstalled) return;
+  _fontsInstalled = true;
+  // When bundled by webpack, __filename may point into .next/server/chunks;
+  // derive possible pdf-fonts locations from there and from CWD.
+  const here = typeof __dirname === "string" ? __dirname : process.cwd();
+  const fontSourceDirs = [
+    path.join(here, "pdf-fonts"),                   // same-folder layout (bundled)
+    path.join(here, "../../src/lib/pdf-fonts"),    // dev relative
+    path.join(process.cwd(), "src/lib/pdf-fonts"), // production
+  ];
+  let fontsDir = "";
+  for (const d of fontSourceDirs) {
+    if (fs.existsSync(path.join(d, "Helvetica.afm"))) { fontsDir = d; break; }
+  }
+  if (!fontsDir) {
+    console.error("[pdf] cannot find bundled AFM fonts in", fontSourceDirs);
+    return;
+  }
+  const candidates: string[] = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pd = require.resolve("pdfkit/js/pdfkit.js");
+    candidates.push(path.join(path.dirname(pd), "data"));
+  } catch {}
+  candidates.push(path.join(process.cwd(), ".next/server/chunks/data"));
+  candidates.push(path.join(here, "data"));
+  candidates.push(path.join(here, "../data"));
+  candidates.push("/tmp/pdfkit-data");
+  for (const dir of candidates) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      for (const f of STANDARD_AFM) {
+        const src = path.join(fontsDir, f);
+        const dst = path.join(dir, f);
+        if (fs.existsSync(src) && !fs.existsSync(dst)) {
+          fs.writeFileSync(dst, fs.readFileSync(src));
+        }
+      }
+      if (fs.existsSync(path.join(dir, "Helvetica.afm"))) return;
+    } catch (e) {
+      console.error("[pdf] candidate failed", dir, (e as Error).message);
+    }
+  }
+}
+
 export interface InvoicePdfInput {
   number: string;
   direction: "incoming" | "outgoing";
@@ -43,6 +102,7 @@ const GREY_SOFT = "#f6f3ec";
 const WHITE = "#ffffff";
 
 export function renderInvoicePdf(inv: InvoicePdfInput, s: InvoiceSettings): Readable {
+  ensurePdfFonts();
   const doc = new PDFDocument({ size: "A4", margin: 48, info: { Title: inv.number } });
 
   // ----- HEADER BAND (black) -----
