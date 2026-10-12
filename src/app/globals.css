@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- OraMongale root CSS variables (gold accent) ---- */
+:root {
+  --accent: #D4A017;
+  --accent-bright: #E8B923;
+  --navy: #0A2A5C;
+  --ink: #0a1a33;
+}
+
+html, body { height: 100%; }
+body {
+  @apply bg-bone text-ink font-sans antialiased;
+}
+
+/* Global layout guardrails to prevent overlaps */
+* { box-sizing: border-box; }
+img, video { max-width: 100%; height: auto; display: block; }
+table { border-collapse: collapse; width: 100%; }
+pre, code, .overflow-guard { overflow-x: auto; }
+
+@layer components {
+  .table-wrap {
+    @apply w-full overflow-x-auto -mx-2 sm:mx-0;
+  }
+  .table {
+    @apply w-full text-sm min-w-[640px];
+  }
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm
+           font-medium transition-colors focus:outline-none focus-visible:ring-2
+           focus-visible:ring-gold/60 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-gold text-navy hover:bg-goldbright font-semibold;
+  }
+  .btn-navy {
+    @apply btn bg-navy text-white hover:bg-[#0e3679];
+  }
+  .btn-whatsapp {
+    @apply btn bg-whatsapp text-white hover:bg-[#1ebe5b];
+  }
+  .btn-ghost {
+    @apply btn text-navy hover:bg-dust/70;
+  }
+  .field {
+    @apply w-full rounded-md border border-dust bg-white px-3 py-2 text-sm
+           text-ink placeholder:text-steel/80 focus:border-gold
+           focus:outline-none focus:ring-1 focus:ring-gold;
+  }
+  .label {
+    @apply block text-sm font-medium text-coal mb-1;
+  }
+  .card {
+    @apply rounded-lg border border-dust bg-white shadow-sm;
+  }
+}
