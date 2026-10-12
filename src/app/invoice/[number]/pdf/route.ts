@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db, ensureBootstrap } from "@/db";
 import { invoices } from "@/db/ops-schema";
 import { loadInvoiceForPdf } from "@/lib/invoice-data";
 import { getInvoiceSettings } from "@/lib/invoice-settings";
@@ -12,6 +12,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ number: string }> }
 ) {
+  await ensureBootstrap();
   const { number } = await params;
   const row = await db.select().from(invoices).where(eq(invoices.number, number)).limit(1);
   const inv = row[0];
