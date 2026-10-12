@@ -48,3 +48,8 @@ public/uploads/pods/*
 # logs
 logs/
 *.log
+.vercel
+
+# Vercel CLI local state
+.vercel/
+.local/
