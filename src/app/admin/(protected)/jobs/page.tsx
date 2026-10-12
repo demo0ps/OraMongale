@@ -7,6 +7,8 @@ import { listAvailableTrucks, listJobs, getJobWithAssignments } from "@/lib/admi
 import { createJob, assignTrucksToJob, sendAssignmentEmails, removeAssignment, setJobStatus } from "../actions";
 import JobsClient from "./JobsClient";
 import { getMailSettings } from "@/lib/mail-settings";
+import { getMinerals } from "@/lib/minerals";
+import MaterialField from "./MaterialField";
 
 export const metadata = { title: "Jobs — Admin" };
 export const dynamic = "force-dynamic";
@@ -82,6 +84,7 @@ export default async function JobsPage({
     getNum("default_margin_pct", 15),
   ]);
   const companiesList = await db.select().from(companies).orderBy(companies.name);
+  const minerals = await getMinerals();
 
   const highlightId = sp.highlight ? Number(sp.highlight) : null;
   const highlightJob = highlightId ? await getJobWithAssignments(highlightId) : null;
@@ -113,7 +116,7 @@ export default async function JobsPage({
       <section className="card p-5">
         <h2 className="text-base font-semibold text-coal mb-3">New job</h2>
         <form action={createJob} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Field label="Material" name="material" placeholder="Coal / Chrome / Manganese…" />
+          <MaterialField minerals={minerals} />
           <Field label="Pickup site" name="pickupSite" placeholder="Witbank" />
           <Field label="Dropoff site" name="dropoffSite" placeholder="Richards Bay" />
           <Field label="Tonnage (t)" name="tonnage" type="number" placeholder="3000" />

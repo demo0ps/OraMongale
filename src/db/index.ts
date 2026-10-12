@@ -79,6 +79,8 @@ export const db = drizzle(sqlite, { schema });
     `CREATE TABLE IF NOT EXISTS drivers (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER NOT NULL, name TEXT NOT NULL, phone TEXT NOT NULL UNIQUE, pin_hash TEXT NOT NULL, created_at TEXT NOT NULL, last_login_at TEXT)`,
     `CREATE TABLE IF NOT EXISTS trip_updates (id INTEGER PRIMARY KEY AUTOINCREMENT, job_id INTEGER NOT NULL, assignment_id INTEGER, driver_id INTEGER NOT NULL, status TEXT NOT NULL, lat TEXT, lng TEXT, notes TEXT, created_at TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS pod_uploads (id INTEGER PRIMARY KEY AUTOINCREMENT, trip_update_id INTEGER NOT NULL, job_id INTEGER NOT NULL, driver_id INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT 'other', file_path TEXT NOT NULL, file_name TEXT, file_size INTEGER, tons INTEGER, created_at TEXT NOT NULL)`,
+    // Seed default minerals list in settings (idempotent via INSERT OR IGNORE)
+    `INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('minerals', '[{"id":"coal","name":"Coal","ratePerTon":0},{"id":"chrome","name":"Chrome ore","ratePerTon":0},{"id":"manganese","name":"Manganese","ratePerTon":0},{"id":"iron-ore","name":"Iron ore","ratePerTon":0},{"id":"pgm","name":"PGM (Platinum Group)","ratePerTon":0},{"id":"diamonds","name":"Diamonds","ratePerTon":0},{"id":"granite","name":"Granite / Aggregate","ratePerTon":0}]', strftime('%Y-%m-%dT%H:%M:%fZ','now'))`,
   ];
   sqlite.exec("BEGIN");
   try {

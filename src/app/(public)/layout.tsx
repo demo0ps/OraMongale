@@ -105,9 +105,21 @@ export default async function PublicLayout({
           </div>
         </div>
         <div className="border-t border-dust">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 text-xs text-steel flex justify-between">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 text-xs text-steel flex flex-wrap items-center justify-between gap-2">
             <span>© {new Date().getFullYear()} {BRAND.fullName}</span>
             <span>South Africa · POPIA-aligned</span>
+          </div>
+          <div className="border-t border-dust/60">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 text-center text-[11px] text-steel/70">
+              <a
+                href="https://eliteway.co.za"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gold transition-colors"
+              >
+                Product of Elite Way Holdings ↗
+              </a>
+            </div>
           </div>
         </div>
       </footer>
