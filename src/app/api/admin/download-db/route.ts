@@ -6,13 +6,17 @@ import fs from "node:fs";
 // without real auth, no further gating — remove or password-lock before
 // deploying publicly.
 export async function GET() {
-  const isVercel = !!process.env.VERCEL;
-  const defaultDbPath = isVercel ? "/tmp/oramongale.db" : "data/oramongale.db";
-  const dbPath =
+  const isServerless =
+    !!process.env.VERCEL ||
+    !!process.env.VERCEL_ENV ||
+    process.cwd() === "/var/task";
+  const defaultDbPath = isServerless ? "/tmp/oramongale.db" : "data/oramongale.db";
+  let dbPath =
     process.env.DATABASE_URL?.replace(/^file:/, "") ?? defaultDbPath;
-  const abs = path.isAbsolute(dbPath)
+  let abs = path.isAbsolute(dbPath)
     ? dbPath
     : path.join(process.cwd(), dbPath);
+  if (!fs.existsSync(abs)) abs = "/tmp/oramongale.db";
   if (!fs.existsSync(abs)) {
     return NextResponse.json({ error: "no database" }, { status: 404 });
   }

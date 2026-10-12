@@ -21,7 +21,27 @@ const SA_PROVINCES: { code: string; name: string }[] = [
  * bootstrap admin exists. Safe to call on every server start and during
  * Next.js's parallel prerender.
  */
+let bootstrapped = false;
 export async function bootstrap(): Promise<void> {
+  if (bootstrapped) return;
+  // CREATE TABLE IF NOT EXISTS is idempotent, and SQLite serialises DDL with
+  // its own locks. Retry a couple of times on transient SQLITE_BUSY/IOERR
+  // caused by Next.js firing many parallel requests on cold start.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try {
+      await runBootstrap();
+      bootstrapped = true;
+      return;
+    } catch (e: any) {
+      const msg = String((e as any)?.code ?? (e as any)?.message ?? "");
+      const isTransient = /BUSY|LOCKED|IOERR_SHORT_READ|disk I\/O error/i.test(msg);
+      if (!isTransient || attempt === 5) throw e;
+      await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
+    }
+  }
+}
+
+async function runBootstrap(): Promise<void> {
   // ---------- Schema (CREATE TABLE IF NOT EXISTS for every table) ----------
   // admin users
   await db.run(sql`CREATE TABLE IF NOT EXISTS users (

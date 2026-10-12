@@ -30,20 +30,23 @@ export async function POST(req: Request) {
   }
 
   const buf = Buffer.from(await file.arrayBuffer());
-  // Vercel serverless fs is read-only under /var/task; use /tmp.
-  const isVercel = !!process.env.VERCEL;
-  const uploadDir = isVercel
+  // Serverless fs (Vercel) is read-only under /var/task; use /tmp.
+  const isServerless =
+    !!process.env.VERCEL ||
+    !!process.env.VERCEL_ENV ||
+    process.cwd() === "/var/task";
+  const uploadDir = isServerless
     ? "/tmp/pods"
     : path.join(process.cwd(), "public", "uploads", "pods");
-  fs.mkdirSync(uploadDir, { recursive: true });
+  try { fs.mkdirSync(uploadDir, { recursive: true }); } catch { fs.mkdirSync("/tmp/pods", { recursive: true }); }
+  const useDir = isServerless ? "/tmp/pods" : uploadDir;
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
   const safeExt = ["jpg", "jpeg", "png", "webp", "pdf"].includes(ext) ? ext : "jpg";
   const fname = `${Date.now()}-${randomBytes(6).toString("hex")}.${safeExt}`;
-  const fullPath = path.join(uploadDir, fname);
+  const fullPath = path.join(useDir, fname);
   fs.writeFileSync(fullPath, buf);
-  // POD images won't be served from /tmp on Vercel; fileUrl is for local dev.
-  // In production the DB record stores fullPath; the admin POD viewer will fall back.
-  const fileUrl = isVercel ? null : `/uploads/pods/${fname}`;
+  // POD images won't be served from /tmp on serverless; fileUrl is for local dev.
+  const fileUrl = isServerless ? null : `/uploads/pods/${fname}`;
 
   // Insert trip update
   const ins = await db

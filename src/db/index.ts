@@ -4,42 +4,37 @@ import * as schema from "./schema";
 import fs from "node:fs";
 import path from "node:path";
 
-// In Vercel serverless, /var/task is read-only; use /tmp for SQLite.
-// Local dev keeps using data/oramongale.db.
-const isVercel = !!process.env.VERCEL;
-const defaultDbPath = isVercel ? "/tmp/oramongale.db" : "data/oramongale.db";
-const dbPath = process.env.DATABASE_URL?.replace(/^file:/, "") ?? defaultDbPath;
-const absolutePath = path.isAbsolute(dbPath)
-  ? dbPath
-  : path.join(process.cwd(), dbPath);
-
-let _sqlite: Database.Database | null = null;
-let _db: ReturnType<typeof drizzle> | null = null;
-
-function open() {
-  if (_sqlite && _db) return { sqlite: _sqlite, db: _db };
-  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-  const sqlite = new Database(absolutePath);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-  _sqlite = sqlite;
-  _db = drizzle(sqlite, { schema });
-  return { sqlite, db: _db };
+function resolveDbPath(): string {
+  const isServerless =
+    !!process.env.VERCEL ||
+    !!process.env.VERCEL_ENV ||
+    process.cwd() === "/var/task" ||
+    !!(process as any).env.AWS_LAMBDA_FUNCTION_VERSION;
+  const defaultDbPath = isServerless ? "/tmp/oramongale.db" : "data/oramongale.db";
+  const dbPath = process.env.DATABASE_URL?.replace(/^file:/, "") ?? defaultDbPath;
+  const abs = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
+  try {
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    const probe = path.join(path.dirname(abs), ".write-probe");
+    fs.writeFileSync(probe, "ok");
+    fs.unlinkSync(probe);
+    return abs;
+  } catch {
+    return "/tmp/oramongale.db";
+  }
 }
 
-// Proxy so property access triggers lazy open (first query opens DB exactly once per worker).
-export const sqlite = new Proxy({} as Database.Database, {
-  get(_t, prop) {
-    const { sqlite: s } = open();
-    const v = (s as any)[prop];
-    return typeof v === "function" ? v.bind(s) : v;
-  },
-});
+const absolutePath = resolveDbPath();
+fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(_t, prop) {
-    const { db: d } = open();
-    const v = (d as any)[prop];
-    return typeof v === "function" ? v.bind(d) : v;
-  },
-});
+// Synchronous open at module load so every worker has a ready connection
+// before any query fires. Use DELETE journal (not WAL) for multi-process
+// safety during Next.js dev/prod worker fan-out; bootstrap serializes
+// schema creation via BEGIN EXCLUSIVE.
+export const sqlite = new Database(absolutePath);
+sqlite.pragma("journal_mode = DELETE");
+sqlite.pragma("foreign_keys = ON");
+sqlite.pragma("busy_timeout = 8000");
+sqlite.pragma("synchronous = NORMAL");
+
+export const db = drizzle(sqlite, { schema });
